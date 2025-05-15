@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Solicitação de Materiais</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      display: block;
+      margin: 20px auto 0;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #materialResults {
+      border: 1px solid #ddd;
+      max-height: 150px;
+      overflow-y: auto;
+      display: none;
+      position: absolute;
+      width: calc(100% - 30px);
+      background: white;
+      z-index: 1000;
+    }
+    .material-item {
+      padding: 8px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
+    .material-item:hover {
+      background-color: #f5f5f5;
+    }
+    .material-code {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .search-container {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+  <h1>Formulário de Solicitação de Materiais</h1>
+
+  <form id="materialForm">
+    <div class="form-group search-container">
+      <label for="materialSearch">Código/Descrição:</label>
+      <input type="text" id="materialSearch" placeholder="Digite o código ou descrição do material">
+      <div id="materialResults"></div>
+    </div>
+
+    <div class="form-group">
+      <label for="materialCode">Código:</label>
+      <input type="text" id="materialCode" readonly>
+    </div>
+
+    <div class="form-group">
+      <label for="materialDescription">Descrição:</label>
+      <input type="text" id="materialDescription" readonly>
+    </div>
+
+    <div class="form-group">
+      <label for="materialUnit">Unidade:</label>
+      <input type="text" id="materialUnit" readonly>
+    </div>
+
+    <div class="form-group">
+      <label for="quantity">Quantidade:</label>
+      <input type="number" id="quantity" min="1" required>
+    </div>
+
+    <div class="form-group">
+      <label for="requester">Nome do Solicitante:</label>
+      <input type="text" id="requester" required>
+    </div>
+
+    <div class="form-group">
+      <label for="destination">Linha de Destino:</label>
+      <select id="destination">
+        <option value="Atlas">Atlas</option>
+        <option value="Especial">Especial</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="reason">Motivo da Solicitação:</label>
+      <select id="reason">
+        <option value="Perda">Perda</option>
+        <option value="Consumo">Consumo</option>
+        <option value="Quebra">Quebra</option>
+        <option value="Desvio">Desvio</option>
+      </select>
+    </div>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzsblg_ozPFmttAChqyZ9WG-fHaevZ5-mQi4GAQyhpbVtyY1-9jmydy0L2SMHZ7WIcn3Q/exec'; // Substitua por sua URL!
+
+    const materialsDatabase = [
+      { code: '000003', description: 'Parafuso sextavado 5/16"', unit: 'UN' },
+      { code: '000014', description: 'Porca zincada 3/8"', unit: 'UN' },
+      { code: '000021', description: 'Arruela lisa 10mm', unit: 'UN' },
+      { code: '000035', description: 'Chave de fenda 8"', unit: 'UN' },
+      { code: '000042', description: 'Martelo unha 500g', unit: 'UN' },
+      { code: '000050', description: 'Alicate corte 8"', unit: 'UN' },
+      { code: '000065', description: 'Fita isolante preta', unit: 'MT' },
+      { code: '000078', description: 'Cabo flexível 2,5mm²', unit: 'MT' }
+    ];
+
+    const materialSearch = document.getElementById('materialSearch');
+    const materialResults = document.getElementById('materialResults');
+    const materialCode = document.getElementById('materialCode');
+    const materialDescription = document.getElementById('materialDescription');
+    const materialUnit = document.getElementById('materialUnit');
+
+    function searchMaterials(query) {
+      if (!query) {
+        materialResults.style.display = 'none';
+        return;
+      }
+
+      const results = materialsDatabase.filter(material =>
+        material.code.includes(query) ||
+        material.description.toLowerCase().includes(query.toLowerCase())
+      );
+
+      displayResults(results);
+    }
+
+    function displayResults(results) {
+      if (results.length === 0) {
+        materialResults.innerHTML = '<div class="material-item">Nenhum material encontrado</div>';
+        materialResults.style.display = 'block';
+        return;
+      }
+
+      materialResults.innerHTML = '';
+      results.forEach(material => {
+        const div = document.createElement('div');
+        div.className = 'material-item';
+        div.innerHTML = `<span class="material-code">${material.code}</span><span>${material.description}</span>`;
+        div.addEventListener('click', () => {
+          materialCode.value = material.code;
+          materialDescription.value = material.description;
+          materialUnit.value = material.unit;
+          materialSearch.value = '';
+          materialResults.style.display = 'none';
+        });
+        materialResults.appendChild(div);
+      });
+
+      materialResults.style.display = 'block';
+    }
+
+    materialSearch.addEventListener('input', () => {
+      searchMaterials(materialSearch.value);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (e.target !== materialSearch) {
+        materialResults.style.display = 'none';
+      }
+    });
+
+    document.getElementById('materialForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      if (!materialCode.value || !document.getElementById('quantity').value || !document.getElementById('requester').value) {
+        alert('Preencha todos os campos obrigatórios.');
+        return;
+      }
+
+      const payload = {
+        code: materialCode.value,
+        description: materialDescription.value,
+        unit: materialUnit.value,
+        quantity: document.getElementById('quantity').value,
+        requester: document.getElementById('requester').value,
+        destination: document.getElementById('destination').value,
+        reason: document.getElementById('reason').value
+      };
+
+      fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        alert('Solicitação enviada com sucesso!');
+        document.getElementById('materialForm').reset();
+        materialCode.value = '';
+        materialDescription.value = '';
+        materialUnit.value = '';
+      })
+      .catch((error) => {
+        console.error('Erro ao enviar dados:', error);
+        alert('Erro ao enviar dados.');
+      });
+    });
+  </script>
+</body>
+</html>
